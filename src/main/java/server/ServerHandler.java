@@ -6,9 +6,9 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import java.io.File;
 
 public class ServerHandler extends SimpleChannelInboundHandler<String> {
-    String login, password, listFiles, result;
+    String login, password, listFiles, result, path;
     String[] arrayFiles;
-    File folderServer = new File("H:\\JavaGeekBrains\\GB_Project_Java_1\\folderServer");
+    File folderServer;
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, String msg) throws Exception {
@@ -21,6 +21,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             System.out.printf("логин: %s пароль: %s\n", login, password);
             // проверка совпадения логина и пароля с отправкой квитанции клиенту
             if (login.equals("graf") && password.equals("123")) {
+                // путь к папке на сервере
+                path = "H:\\JavaGeekBrains\\GB_Project_Java_1\\folderServer";
+                folderServer = new File(path);
                 channelHandlerContext.writeAndFlush("true " + login);
             } else channelHandlerContext.writeAndFlush("неверный логин или пароль");
         }
@@ -59,7 +62,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             }
             System.out.println(listFiles);
             // отправляем строку ответа клиенту
-            channelHandlerContext.writeAndFlush(listFiles);
+            channelHandlerContext.writeAndFlush("Проверка файлов:\n\n" + listFiles + "\n");
         }
 
         /** ЗАГРУЗКА ФАЙЛОВ НА СЕРВЕР **/
@@ -86,12 +89,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
                 }
                 // если файла на клиенте нет, но есть на сервере, тогда файлу присваивается статус "на сервере"
                 if (!isExist) {
-                    listFiles = listFiles.replace(fileClients, fileClients + " == загружен на сервер");
+                    listFiles = listFiles.replace(fileClients + "\n", fileClients + " == загружен на сервер\n");
                 }
             }
             System.out.println(listFiles);
             // отправляем строку ответа клиенту
-            channelHandlerContext.writeAndFlush(listFiles);
+            channelHandlerContext.writeAndFlush("Загруженные файлы на сервер:\n\n" + listFiles + "\n");
         }
 
         /** ЗАГРУЗКА ФАЙЛОВ С СЕРВЕРА НА КЛИЕНТ **/
@@ -115,7 +118,6 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
                     // тогда у файла меняется статус на "синхронизирован"
                     if (x.contains(y)) {
                         listFiles = listFiles.replace(x + "\n", "");
-//                        System.out.println("файл в папке " + y + " == есть на сервере");
                         isExist = true;
                         break;
                     }
@@ -127,7 +129,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             }
             System.out.println(outMessage);
             // отправляем строку ответа клиенту
-            channelHandlerContext.writeAndFlush(outMessage);
+            channelHandlerContext.writeAndFlush("Скаченные файлы с сервера:\n\n" + outMessage + "\n");
         }
     }
 
