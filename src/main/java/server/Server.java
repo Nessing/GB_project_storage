@@ -8,6 +8,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LineBasedFrameDecoder;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 
@@ -42,6 +44,8 @@ public class Server {
                             new LineBasedFrameDecoder(256),
                             new StringEncoder(),
                             new StringDecoder(),
+                            new ByteArrayEncoder(),
+                            new ByteArrayDecoder(),
                             new ServerHandler()
                     );
                 }

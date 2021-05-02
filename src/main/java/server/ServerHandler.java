@@ -1,9 +1,17 @@
 package server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
 
 public class ServerHandler extends SimpleChannelInboundHandler<String> {
     String login, password, listFiles, result, path;
@@ -24,7 +32,11 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
                 // путь к папке на сервере
                 path = "H:\\JavaGeekBrains\\GB_Project_Java_1\\folderServer";
                 folderServer = new File(path);
-                channelHandlerContext.writeAndFlush("true " + login);
+                String s = "true " + login;
+                byte[] bytes = s.getBytes("US-ASCII");
+                System.out.println(Arrays.toString(bytes));
+//                channelHandlerContext.writeAndFlush("true " + login);
+                channelHandlerContext.writeAndFlush(bytes);
             } else channelHandlerContext.writeAndFlush("неверный логин или пароль");
         }
 
@@ -93,8 +105,27 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
                 }
             }
             System.out.println(listFiles);
+
+/** Тестовый **/
+            try (FileInputStream fileInputStream = new FileInputStream("H:\\JavaGeekBrains\\GB_Project_Java_1\\folderServer\\working.docx")) {
+                File file = new File("H:\\JavaGeekBrains\\GB_Project_Java_1\\folderServer\\working.docx");
+                long sizeFile = file.length();
+                int s;
+                int count = 0;
+                String stringOut = "";
+                byte[] bytes = new byte[8192];
+                channelHandlerContext.writeAndFlush("/sizeFile " + sizeFile);
+                while ((s = fileInputStream.read(bytes)) > 0) {
+                    count++;
+                    System.out.println("== FRAME == " + count + " " + bytes.length);
+                    stringOut = new String(bytes, "ISO-8859-1");
+                    channelHandlerContext.writeAndFlush(stringOut);
+//                    channelHandlerContext.writeAndFlush(Unpooled.wrappedBuffer(bytes, 0, s));
+                    System.out.println(stringOut);
+                }
+            }
             // отправляем строку ответа клиенту
-            channelHandlerContext.writeAndFlush("Загруженные файлы на сервер:\n\n" + listFiles + "\n");
+//            channelHandlerContext.writeAndFlush("Загруженные файлы на сервер:\n\n" + listFiles + "\n");
         }
 
         /** ЗАГРУЗКА ФАЙЛОВ С СЕРВЕРА НА КЛИЕНТ **/
@@ -145,6 +176,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        ctx.close();
         System.out.println("клиент отключился");
     }
 }
