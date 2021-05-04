@@ -1,16 +1,9 @@
 package server;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 
 public class ServerHandler extends SimpleChannelInboundHandler<String> {
@@ -30,13 +23,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             // проверка совпадения логина и пароля с отправкой квитанции клиенту
             if (login.equals("graf") && password.equals("123")) {
                 // путь к папке на сервере
-                path = "H:\\JavaGeekBrains\\GB_Project_Java_1\\folderServer";
+                path = "E:\\IDEA\\GeekBrains\\testsFrom";
                 folderServer = new File(path);
                 String s = "true " + login;
                 byte[] bytes = s.getBytes("US-ASCII");
                 System.out.println(Arrays.toString(bytes));
-//                channelHandlerContext.writeAndFlush("true " + login);
-                channelHandlerContext.writeAndFlush(bytes);
+                channelHandlerContext.writeAndFlush("true " + login);
             } else channelHandlerContext.writeAndFlush("неверный логин или пароль");
         }
 
@@ -107,21 +99,34 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             System.out.println(listFiles);
 
 /** Тестовый **/
-            try (FileInputStream fileInputStream = new FileInputStream("H:\\JavaGeekBrains\\GB_Project_Java_1\\folderServer\\working.docx")) {
-                File file = new File("H:\\JavaGeekBrains\\GB_Project_Java_1\\folderServer\\working.docx");
+            // путь к файлу, который будет отправляться с сервера
+            try (FileInputStream fileInputStream = new FileInputStream("E:\\IDEA\\GeekBrains\\testsFrom\\open_server_panel_5_3_8_setup.exe")) {
+                // File служит для получения размера файла
+                File file = new File("E:\\IDEA\\GeekBrains\\testsFrom\\open_server_panel_5_3_8_setup.exe");
                 long sizeFile = file.length();
+                long sizeFileControl = file.length();
+                long sizeFrameByte = 8192;
                 int s;
                 int count = 0;
                 String stringOut = "";
-                byte[] bytes = new byte[8192];
+                byte[] bytes = new byte[(int) sizeFrameByte];
                 channelHandlerContext.writeAndFlush("/sizeFile " + sizeFile);
                 while ((s = fileInputStream.read(bytes)) > 0) {
+                    System.out.println("sizeFile " + sizeFile);
+                    System.out.println("sizeFileControl " + sizeFileControl);
                     count++;
                     System.out.println("== FRAME == " + count + " " + bytes.length);
+                    String str = Arrays.toString(bytes);
+                    System.out.println(str);
                     stringOut = new String(bytes, "ISO-8859-1");
+                    System.out.println("SIZE BYTES == " + bytes.length);
                     channelHandlerContext.writeAndFlush(stringOut);
-//                    channelHandlerContext.writeAndFlush(Unpooled.wrappedBuffer(bytes, 0, s));
-                    System.out.println(stringOut);
+                    sizeFileControl -= sizeFrameByte;
+                    if (sizeFileControl <= sizeFrameByte && sizeFileControl > 0) {
+                        bytes = new byte[(int) sizeFileControl];
+                    }
+                    if (sizeFileControl <= 0) break;
+                    Arrays.fill(bytes, (byte) 0);
                 }
             }
             // отправляем строку ответа клиенту
@@ -176,7 +181,6 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        ctx.close();
         System.out.println("клиент отключился");
     }
 }

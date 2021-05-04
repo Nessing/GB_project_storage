@@ -2,7 +2,6 @@ package client.gui;
 
 import client.Client;
 import client.ClientHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelFuture;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -13,10 +12,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.*;
-import java.lang.reflect.Array;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -112,6 +107,7 @@ public class ClientAuthorization extends Application {
             }
         });
 
+        /* ПОКА ТЕСТ ДЛЯ ПРИЕМА ФАЙЛА С СЕРВЕРА */
         /** загрузка файлов на сервер (файлы, которых нет на сервере, удаляются) **/
         synchronizationController.getButtonLoadToServer().setOnMouseClicked(loadToServer -> {
             pathToDirectory = synchronizationController.getPath();
@@ -123,7 +119,6 @@ public class ClientAuthorization extends Application {
                 }
                 future.channel().writeAndFlush("/loadToServer " + listFiles + "\n");
 //                readMessageSynchronization(synchronizationController);
-                readMessageSynchronizationByte(synchronizationController);
             } catch (NullPointerException e) {
                 synchronizationController.setMessage("Неверно указан путь к папке!");
             }
@@ -189,43 +184,6 @@ public class ClientAuthorization extends Application {
                 break;
             }
         }
-    }
-
-/** Тестовый **/
-    private byte[] readMessageSynchronizationByte(ClientControllerSynchronization client) {
-        try(FileOutputStream fileOutputStream = new FileOutputStream("H:\\JavaGeekBrains\\GB_Project_Java_1\\папка для синхронизации\\working.docx")) {
-            File file = new File("H:\\JavaGeekBrains\\GB_Project_Java_1\\папка для синхронизации\\working.docx");
-            long sizeFile = file.length();
-            boolean check = false;
-            long sizeFileServer = 0;
-            while (true) {
-                if (sizeFile == sizeFileServer && check) break;
-                System.out.println("client: " + sizeFile + "\nServer: " + clientHandler.getSizeFile());
-                while (message == null) {
-                    if (sizeFile == sizeFileServer && check) break;
-                    message = clientHandler.getMessage();
-                    if (message != null) {
-                        client.setMessage(message);
-                        fileOutputStream.write(clientHandler.getBytes());
-                        sizeFileServer = clientHandler.getSizeFile();
-                        clientHandler.setBytes(null);
-//                    System.out.println(clientHandler.getMessage());
-                        message = null;
-                        clientHandler.setMessage(null);
-                        check = true;
-                        sizeFile = file.length();
-                        break;
-                    }
-                }
-                System.out.println("client: " + sizeFile + "\nServer: " + clientHandler.getSizeFile());
-            }
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     private Object init(Stage stage, String source, String title) throws Exception {
