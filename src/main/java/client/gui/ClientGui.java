@@ -2,7 +2,6 @@ package client.gui;
 
 import client.Client;
 import client.ClientHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelFuture;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -13,14 +12,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.*;
-import java.lang.reflect.Array;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ClientAuthorization extends Application {
+public class ClientGui extends Application {
     Logger LOGGER;
     Client client = new Client("localhost", 2000);
     ChannelFuture future;
@@ -31,12 +26,12 @@ public class ClientAuthorization extends Application {
     private StringBuilder listFiles;
 
     public static void main(String[] args) {
-        ClientAuthorization.launch(args);
+        ClientGui.launch(args);
     }
 
     @Override
     public void start(Stage stage) throws Exception {
-        LOGGER = LOGGER.getLogger(ClientAuthorization.class.getName());
+        LOGGER = LOGGER.getLogger(ClientGui.class.getName());
         LOGGER.log(Level.INFO, "старт");
 
         Stage clientGui = new Stage();
@@ -99,6 +94,7 @@ public class ClientAuthorization extends Application {
         /** проверка файлов **/
         synchronizationController.getButtonCheck().setOnMouseClicked(check -> {
             pathToDirectory = synchronizationController.getPath();
+            clientHandler.setPath(pathToDirectory);
             try {
                 directory = new File(pathToDirectory);
                 listFiles = new StringBuilder();
@@ -106,15 +102,30 @@ public class ClientAuthorization extends Application {
                     listFiles.append("\\" + x + "%%");
                 }
                 future.channel().writeAndFlush("/check " + listFiles + "\n");
-                readMessageSynchronization(synchronizationController);
+                // цикл для ожидания получения всего сообщения с сервера
+                while (!clientHandler.isCheck()) {
+                    // если будет долгое чтение сообщения
+                    synchronizationController.setMessage("загрузка...");
+                    // если все сообщение было прочитано, устанавливается значение false и прекращается цикл
+                    if (clientHandler.isCheck()) {
+                        clientHandler.setCheck(false);
+                        break;
+                    }
+                }
+                // для отображения в GUI полученного результата по файлам
+                synchronizationController.setMessage(clientHandler.getCheckFiles());
+//                readMessageSynchronization(synchronizationController);
             } catch (NullPointerException e) {
                 synchronizationController.setMessage("Неверно указан путь к папке!");
             }
         });
 
+        /* ПОКА ТЕСТ ДЛЯ ПРИЕМА ФАЙЛА С СЕРВЕРА */
         /** загрузка файлов на сервер (файлы, которых нет на сервере, удаляются) **/
         synchronizationController.getButtonLoadToServer().setOnMouseClicked(loadToServer -> {
             pathToDirectory = synchronizationController.getPath();
+            // устанавливает путь к файлу
+            clientHandler.setPath(pathToDirectory);
             try {
                 directory = new File(pathToDirectory);
                 listFiles = new StringBuilder();
@@ -123,14 +134,9 @@ public class ClientAuthorization extends Application {
                 }
                 future.channel().writeAndFlush("/loadToServer " + listFiles + "\n");
 //                readMessageSynchronization(synchronizationController);
-                readMessageSynchronizationByte(synchronizationController);
             } catch (NullPointerException e) {
                 synchronizationController.setMessage("Неверно указан путь к папке!");
             }
-            /** **/
-
-
-            /** **/
         });
 
         /** загрузка файлов с сервера **/
@@ -143,7 +149,21 @@ public class ClientAuthorization extends Application {
                     listFiles.append("\\" + x + "%%");
                 }
                 future.channel().writeAndFlush("/loadFromServer " + listFiles + "\n");
-                readMessageSynchronization(synchronizationController);
+//                readMessageSynchronization(synchronizationController);
+                // ожидание получения имени скаченного файла
+                while (!clientHandler.isReadNameFile()) {
+                    // если имя файла получено, тогда выводиться имя файла на экран
+                    // и устанавливается значение false
+                    // очищается поле в окне информации GUI
+                    synchronizationController.setMessage("");
+                    if (clientHandler.isReadNameFile()) {
+                        System.out.println(true);
+                        synchronizationController.setMessage(clientHandler.getMessage());
+                        System.out.println(clientHandler.getMessage());
+                        clientHandler.setReadNameFile(false);
+                        break;
+                    }
+                }
             } catch (NullPointerException e) {
                 synchronizationController.setMessage("Неверно указан путь к папке!");
             }
@@ -179,54 +199,17 @@ public class ClientAuthorization extends Application {
         return msg;
     }
 
-    private void readMessageSynchronization(ClientControllerSynchronization client) {
-        while (message == null) {
-            message = clientHandler.getMessage();
-            if (message != null) {
-                client.setMessage(message);
-                message = null;
-                clientHandler.setMessage(null);
-                break;
-            }
-        }
-    }
-
-/** Тестовый **/
-    private byte[] readMessageSynchronizationByte(ClientControllerSynchronization client) {
-//        try (FileOutputStream fileOutputStream = new FileOutputStream("H:\\JavaGeekBrains\\GB_Project_Java_1\\папка для синхронизации\\working.docx")) {
-//            File file = new File("H:\\JavaGeekBrains\\GB_Project_Java_1\\папка для синхронизации\\working.docx");
-//            long sizeFile = file.length();
-//            boolean check = false;
-//            long sizeFileServer = 0;
-//            while (true) {
-//                if (sizeFile == sizeFileServer && check) break;
-//                System.out.println("client: " + sizeFile + "\nServer: " + clientHandler.getSizeFile());
-//                while (message == null) {
-//                    if (sizeFile == sizeFileServer && check) break;
-//                    message = clientHandler.getMessage();
-//                    if (message != null) {
-//                        client.setMessage(message);
-//                        fileOutputStream.write(clientHandler.getBytes());
-//                        sizeFileServer = clientHandler.getSizeFile();
-//                        clientHandler.setBytes(null);
-////                    System.out.println(clientHandler.getMessage());
-//                        message = null;
-//                        clientHandler.setMessage(null);
-//                        check = true;
-//                        sizeFile = file.length();
-//                        break;
-//                    }
-//                }
-//                System.out.println("client: " + sizeFile + "\nServer: " + clientHandler.getSizeFile());
+//    private void readMessageSynchronization(ClientControllerSynchronization client) {
+//        while (message == null) {
+//            message = clientHandler.getMessage();
+//            if (message != null) {
+//                client.setMessage(message);
+//                message = null;
+//                clientHandler.setMessage(null);
+//                break;
 //            }
-//
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
 //        }
-        return null;
-    }
+//    }
 
     private Object init(Stage stage, String source, String title) throws Exception {
         FXMLLoader fxmlLoader = new FXMLLoader();

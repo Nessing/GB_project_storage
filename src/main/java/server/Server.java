@@ -42,7 +42,7 @@ public class Server {
                 @Override
                 protected void initChannel(NioSocketChannel nioSocketChannel) {
                     nioSocketChannel.pipeline().addLast(
-                            new LineBasedFrameDecoder(256),
+                            new LineBasedFrameDecoder(Integer.MAX_VALUE),
                             new LengthFieldPrepender(4),
                             new StringEncoder(),
                             new StringDecoder(),

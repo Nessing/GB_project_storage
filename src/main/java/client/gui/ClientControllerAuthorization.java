@@ -14,7 +14,7 @@ public class ClientControllerAuthorization {
     @FXML
     private TextField login, password;
     @FXML
-    private ClientAuthorization authorization;
+    private ClientGui authorization;
 
     private boolean isActivated = false;
 
