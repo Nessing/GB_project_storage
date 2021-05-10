@@ -46,8 +46,6 @@ public class Server {
                             new LengthFieldPrepender(4),
                             new StringEncoder(),
                             new StringDecoder(),
-                            new ByteArrayEncoder(),
-                            new ByteArrayDecoder(),
                             new ServerHandler()
                     );
                 }

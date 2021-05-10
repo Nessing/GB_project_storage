@@ -56,8 +56,6 @@ public class Client {
                             new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4),
                             new StringEncoder(),
                             new StringDecoder(),
-                            new ByteArrayEncoder(),
-                            new ByteArrayDecoder(),
                             clientHandler
                     );
                 }
