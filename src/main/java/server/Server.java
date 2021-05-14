@@ -7,6 +7,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.bytes.ByteArrayDecoder;
@@ -42,10 +43,10 @@ public class Server {
                 @Override
                 protected void initChannel(NioSocketChannel nioSocketChannel) {
                     nioSocketChannel.pipeline().addLast(
-                            new LineBasedFrameDecoder(Integer.MAX_VALUE),
+                            new LengthFieldBasedFrameDecoder(16384, 0, 4, 0, 4),
+                            new StringDecoder(),
                             new LengthFieldPrepender(4),
                             new StringEncoder(),
-                            new StringDecoder(),
                             new ServerHandler()
                     );
                 }

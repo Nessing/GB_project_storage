@@ -16,10 +16,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ClientGui extends Application {
-    Logger LOGGER;
-    Client client = new Client("localhost", 2000);
-    ChannelFuture future;
-    ClientHandler clientHandler;
+    private Logger LOGGER;
+    private Client client = new Client("localhost", 2000);
+    private ChannelFuture future;
+    private ClientHandler clientHandler;
     private String message;
     private File directory;
     private String pathToDirectory;
@@ -32,7 +32,7 @@ public class ClientGui extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         LOGGER = LOGGER.getLogger(ClientGui.class.getName());
-        LOGGER.log(Level.INFO, "старт");
+        LOGGER.log(Level.INFO, "клиент запущен");
 
         Stage clientGui = new Stage();
         clientGui.initOwner(stage);
@@ -53,7 +53,7 @@ public class ClientGui extends Application {
             } else {
                 // отправка на сервер логин и пароль для авторизации
                 future.channel().writeAndFlush("/authorization " + authorizationController.getLogin() +
-                        " " + authorizationController.getPassword() + "\n");
+                        " " + authorizationController.getPassword());
 
                 // цикл на получение входящего сообщения от сервера (ответ)
                 // выполняется цикл, пока сообщение пустое (ожидание сообщения с сервера)
@@ -101,7 +101,7 @@ public class ClientGui extends Application {
                 for (String x : directory.list()) {
                     listFiles.append("\\" + x + "%%");
                 }
-                future.channel().writeAndFlush("/check " + listFiles + "\n");
+                future.channel().writeAndFlush("/check " + listFiles);
                 // цикл для ожидания получения всего сообщения с сервера
                 while (!clientHandler.isCheck()) {
                     // если будет долгое чтение сообщения
@@ -124,7 +124,7 @@ public class ClientGui extends Application {
         /** загрузка файлов на сервер (файлы, которых нет на сервере, удаляются) **/
         synchronizationController.getButtonLoadToServer().setOnMouseClicked(loadToServer -> {
             pathToDirectory = synchronizationController.getPath();
-            // устанавливает путь к файлу
+            // устанавливает путь к файлу (получает со строки ввода)
             clientHandler.setPath(pathToDirectory);
             try {
                 directory = new File(pathToDirectory);
@@ -134,6 +134,20 @@ public class ClientGui extends Application {
                 }
                 future.channel().writeAndFlush("/loadToServer " + listFiles + "\n");
 //                readMessageSynchronization(synchronizationController);
+                // (ВЫВОД РЕЗУЛЬТАТА В ОКНО) ожидание получения имени скаченного файла
+                while (!clientHandler.isReadNameFile()) {
+                    // если имя файла получено, тогда выводиться имя файла на экран
+                    // и устанавливается значение false
+                    // очищается поле в окне информации GUI
+                    synchronizationController.setMessage("");
+                    if (clientHandler.isReadNameFile()) {
+                        System.out.println(true);
+                        synchronizationController.setMessage(clientHandler.getMessage());
+                        System.out.println(clientHandler.getMessage());
+                        clientHandler.setReadNameFile(false);
+                        break;
+                    }
+                }
             } catch (NullPointerException e) {
                 synchronizationController.setMessage("Неверно указан путь к папке!");
             }
@@ -150,7 +164,7 @@ public class ClientGui extends Application {
                 }
                 future.channel().writeAndFlush("/loadFromServer " + listFiles + "\n");
 //                readMessageSynchronization(synchronizationController);
-                // ожидание получения имени скаченного файла
+                // (ВЫВОД РЕЗУЛЬТАТА В ОКНО) ожидание получения имени скаченного файла
                 while (!clientHandler.isReadNameFile()) {
                     // если имя файла получено, тогда выводиться имя файла на экран
                     // и устанавливается значение false

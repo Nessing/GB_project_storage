@@ -119,7 +119,30 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
 //        }
 
 /* ТЕСТ ПОЛУЧЕНИЯ ФАЙЛА */
-        if (msg.startsWith("/loadToServer ")) {
+        // получает команду для готовности получения файла на сервер и отправляет ответ о готовности
+        if (msg.startsWith("/loadToServer ")) channelHandlerContext.writeAndFlush("/readyToGet%%\n");
+        // блок для записи файла
+        if (isWriteFiles) {
+            file = new File(pathFolderOfClient);
+            System.out.println(file.length() + " FILE");
+            bytes = msg.getBytes("ISO-8859-1");
+            System.out.println("SIZE BYTES == " + bytes.length + " [page 146]");
+            outputStream.write(bytes);
+            setSizeFile(file.length());
+            // когда размер файла с сервера равен скаченному файлу на клиенте, закрывается работа с файлом записи
+            if (sizeFile == sizeFileServer) {
+                outputStream.flush();
+                outputStream.close();
+                isWriteFiles = false;
+                channelHandlerContext.writeAndFlush("/nameFile%%" + file.getName() + " == Загружен на сервер");
+                System.out.println("CHECK");
+            } else {
+                System.out.println("NO CHECK");
+            }
+            System.out.println("client: " + sizeFile + "\nServer: " + sizeFileServer);
+        }
+        // возвращается команда получения файла
+        if (msg.startsWith("/sendFile%%")) {
             // флаг, для вхождения в блок операции скачивания файла
             isWriteFiles = true;
             // второй элемент массива - размер файла на сервере
@@ -128,37 +151,19 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             this.setSizeFileServer(Long.parseLong(str[1]));
             // получает имя файла, которое будет сохранено на клиенте
             nameFile = str[2];
-            StringBuilder addNameFile = new StringBuilder(path + "\\" + nameFile);
-            path = addNameFile.toString();
-            outputStream = new FileOutputStream(path, true);
+            StringBuilder addNameFile = new StringBuilder(pathFolderOfClient + nameFile);
+            pathFolderOfClient = addNameFile.toString();
+            System.out.println(pathFolderOfClient + " ===== FILE");
+            outputStream = new FileOutputStream(pathFolderOfClient, true);
+
             System.out.println("client: " + sizeFile + "\nServer: " + sizeFileServer);
         }
 
-        // блок для записи файла
-        if (isWriteFiles) {
-            file = new File(path);
-            System.out.println(file.length() + " FILE");
-            bytes = msg.getBytes("ISO-8859-1");
-            System.out.println("SIZE BYTES == " + bytes.length);
-            outputStream.write(bytes);
-            setSizeFile(file.length());
-            // когда размер файла с сервера равен скаченному файлу на клиенте, закрывается работа с файлом записи
-            if (sizeFile == sizeFileServer) {
-                outputStream.flush();
-                outputStream.close();
-                isWriteFiles = false;
-                System.out.println("CHECK");
-            } else {
-                System.out.println("NO CHECK");
-            }
-            System.out.println("client: " + sizeFile + "\nServer: " + sizeFileServer);
-        }
 
         /** ЗАГРУЗКА ФАЙЛОВ С СЕРВЕРА НА КЛИЕНТ **/
         if (msg.startsWith("/loadFromServer ")) {
 
-
-/** Тестовый отправки файла на клиент **/
+/* ОТПРАВКА ФАЙЛА НА КЛИЕНТ */
             // путь к файлу, который будет отправляться с сервера
             fileWorking = pathFolderOfClient + "Microsoft Access База данных.accdb";
             try (FileInputStream fileInputStream = new FileInputStream(fileWorking)) {
@@ -187,7 +192,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
                     if (sizeFileControl <= 0) break;
                     Arrays.fill(bytes, (byte) 0);
                 }
-                channelHandlerContext.writeAndFlush("/nameFile%%" + file.getName() + " == скачен\n");
+                channelHandlerContext.writeAndFlush("/nameFile%%" + file.getName() + " == скачен");
             }
 
 

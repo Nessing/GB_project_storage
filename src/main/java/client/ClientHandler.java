@@ -18,7 +18,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
     private long sizeFileServer = 0;
     private OutputStream outputStream;
 
-    private String pathToDirectory = "E:\\IDEA\\GeekBrains\\testsClient\\";
+    private String pathToDirectory = "H:\\JavaGeekBrains\\GB_Project_Java_1\\папка для синхронизации\\";
 
     // файл служит для котроля размера файла
     private File file;
@@ -74,6 +74,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, String msg) throws Exception {
+        System.out.println(msg + " === сообщение входа [77]");
         /** для скачанивания файла с сервера **/
         // если принятое сообщение начинается со служебной команды "/downloadFile ", это означает, что сервер передает
         // размер и имя файла, который необходимо принять
@@ -97,11 +98,13 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
             checkFiles = msg.replace("/checkFiles%%", "");
             // после прочтения, устанавливается значение true (сообщение прочитано)
             isCheck = true;
-        } else if (msg.startsWith("/sendFile%%")) {
+            /** для отправки файла на сервер **/
+            // сервер готов к получению файла
+        } else if (msg.startsWith("/readyToGet%%")) {
 
 /** Тестовый отправки файла на сервер **/
             // путь к файлу, который будет отправляться с сервера
-            fileWorking = pathToDirectory + "Microsoft Access База данных.accdb";
+            fileWorking = pathToDirectory + "working.docx";
             try (FileInputStream fileInputStream = new FileInputStream(fileWorking)) {
                 // File служит для получения размера файла
                 file = new File(fileWorking);
@@ -111,8 +114,9 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
                 int count = 0;
                 String stringOut = "";
                 byte[] bytes = new byte[(int) sizeFrameByte];
-                channelHandlerContext.writeAndFlush("/downloadFile%%" + sizeFile + "%%" + file.getName());
+                channelHandlerContext.writeAndFlush("/sendFile%%" + sizeFile + "%%" + file.getName());
                 while (fileInputStream.read(bytes) > 0) {
+                    System.out.println("SEND FILE TO SERVER");
                     System.out.println("\nFILE NAME = " + file.getName());
                     System.out.println("sizeFile " + sizeFile);
                     System.out.println("sizeFileControl " + sizeFileControl);
