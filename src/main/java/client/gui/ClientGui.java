@@ -12,11 +12,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ClientGui extends Application {
-    private Logger LOGGER;
     private Client client = new Client("localhost", 2000);
     private ChannelFuture future;
     private ClientHandler clientHandler;
@@ -31,9 +28,6 @@ public class ClientGui extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        LOGGER = LOGGER.getLogger(ClientGui.class.getName());
-        LOGGER.log(Level.INFO, "клиент запущен");
-
         Stage clientGui = new Stage();
         clientGui.initOwner(stage);
         clientGui.initModality(Modality.APPLICATION_MODAL);
@@ -91,33 +85,9 @@ public class ClientGui extends Application {
             client.closeClient();
         });
 
-        /** проверка файлов **/
+/* ЧЕК ФАЙЛОВ */
         synchronizationController.getButtonCheck().setOnMouseClicked(check -> {
-            pathToDirectory = synchronizationController.getPath();
-            clientHandler.setPath(pathToDirectory);
-            try {
-                directory = new File(pathToDirectory);
-                listFiles = new StringBuilder();
-                for (String x : directory.list()) {
-                    listFiles.append("\\" + x + "%%");
-                }
-                future.channel().writeAndFlush("/check " + listFiles);
-                // цикл для ожидания получения всего сообщения с сервера
-                while (!clientHandler.isCheck()) {
-                    // если будет долгое чтение сообщения
-                    synchronizationController.setMessage("загрузка...");
-                    // если все сообщение было прочитано, устанавливается значение false и прекращается цикл
-                    if (clientHandler.isCheck()) {
-                        clientHandler.setCheck(false);
-                        break;
-                    }
-                }
-                // для отображения в GUI полученного результата по файлам
-                synchronizationController.setMessage(clientHandler.getCheckFiles());
-//                readMessageSynchronization(synchronizationController);
-            } catch (NullPointerException e) {
-                synchronizationController.setMessage("Неверно указан путь к папке!");
-            }
+            checkFiles(synchronizationController);
         });
 
         /* ПОКА ТЕСТ ДЛЯ ПРИЕМА ФАЙЛА С СЕРВЕРА */
@@ -125,14 +95,11 @@ public class ClientGui extends Application {
         synchronizationController.getButtonLoadToServer().setOnMouseClicked(loadToServer -> {
             pathToDirectory = synchronizationController.getPath();
             // устанавливает путь к файлу (получает со строки ввода)
-            clientHandler.setPath(pathToDirectory);
+            clientHandler.setPathFolder(pathToDirectory);
             try {
-                directory = new File(pathToDirectory);
-                listFiles = new StringBuilder();
-                for (String x : directory.list()) {
-                    listFiles.append("\\" + x + "%%");
-                }
-                future.channel().writeAndFlush("/loadToServer " + listFiles + "\n");
+                // проверка статусов файлов
+                checkFiles(synchronizationController);
+                future.channel().writeAndFlush("/loadToServer " + "\n");
 //                readMessageSynchronization(synchronizationController);
                 // (ВЫВОД РЕЗУЛЬТАТА В ОКНО) ожидание получения имени скаченного файла
                 while (!clientHandler.isReadNameFile()) {
@@ -195,6 +162,36 @@ public class ClientGui extends Application {
         }).start();
     }
 
+    // метод для проверки файлов
+    private void checkFiles(ClientControllerSynchronization synchronizationController) {
+        pathToDirectory = synchronizationController.getPath();
+        clientHandler.setPathFolder(pathToDirectory);
+        try {
+            directory = new File(pathToDirectory);
+            listFiles = new StringBuilder();
+            for (String x : directory.list()) {
+                listFiles.append("\\" + x + "%%");
+            }
+            future.channel().writeAndFlush("/check " + listFiles);
+            // цикл для ожидания получения всего сообщения с сервера
+            while (!clientHandler.isCheck()) {
+                // если будет долгое чтение сообщения
+                synchronizationController.setMessage("загрузка...");
+                // если все сообщение было прочитано, устанавливается значение false и прекращается цикл
+                if (clientHandler.isCheck()) {
+                    clientHandler.setCheck(false);
+                    break;
+                }
+            }
+            // для отображения в GUI полученного результата по файлам
+            synchronizationController.setMessage(clientHandler.getCheckFiles());
+//                readMessageSynchronization(synchronizationController);
+        } catch (NullPointerException e) {
+            synchronizationController.setMessage("Неверно указан путь к папке!");
+        }
+    }
+
+    // получение сообщения с сервера
     private String readMessageAuthorization(ClientControllerAuthorization client) {
         String msg = "";
         while (message == null) {

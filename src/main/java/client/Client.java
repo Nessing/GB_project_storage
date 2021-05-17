@@ -54,9 +54,9 @@ public class Client {
                 @Override
                 protected void initChannel(NioSocketChannel nioSocketChannel) {
                     nioSocketChannel.pipeline().addLast(
-                            new LengthFieldBasedFrameDecoder(16384, 0, 4, 0, 4),
-                            new StringDecoder(),
+                            new LengthFieldBasedFrameDecoder(1024 * 512, 0, 4, 0, 4),
                             new LengthFieldPrepender(4),
+                            new StringDecoder(),
                             new StringEncoder(),
                             clientHandler
                     );

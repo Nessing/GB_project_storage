@@ -7,8 +7,7 @@ import java.io.*;
 import java.util.Arrays;
 
 public class ClientHandler extends SimpleChannelInboundHandler<String> {
-    private String message, path, nameFile, checkFiles, fileWorking;
-    private StringBuilder listBuf = new StringBuilder();
+    private String message, pathFolder, nameFile, checkFiles, fileWorking, pathFile;
     private byte[] bytes;
     private long sizeFile;
     private boolean isWriteFiles = false;
@@ -43,17 +42,8 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
         return checkFiles;
     }
 
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public void setFile(String file) {
-        this.file = new File(file);
+    public void setPathFolder(String pathFolder) {
+        this.pathFolder = pathFolder;
     }
 
     public String getMessage() {
@@ -78,6 +68,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
         /** для скачанивания файла с сервера **/
         // если принятое сообщение начинается со служебной команды "/downloadFile ", это означает, что сервер передает
         // размер и имя файла, который необходимо принять
+/* ПОЛУЧЕНИЕ ФАЙЛА С СЕРВЕРА */
         if (msg.startsWith("/downloadFile%%")) {
             // флаг, для вхождения в блок операции скачивания файла
             isWriteFiles = true;
@@ -87,12 +78,12 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
             this.setSizeFileServer(Long.parseLong(str[1]));
             // получает имя файла, которое будет сохранено на клиенте
             nameFile = str[2];
-            StringBuilder addNameFile = new StringBuilder(path + "\\" + nameFile);
-            path = addNameFile.toString();
-            outputStream = new FileOutputStream(path, true);
+            StringBuilder addNameFile = new StringBuilder(pathFolder + "\\" + nameFile);
+            pathFile = addNameFile.toString();
+            outputStream = new FileOutputStream(pathFile, true);
             System.out.println("client: " + sizeFile + "\nServer: " + sizeFileServer);
 
-            /** для чека файлов **/
+/* ЧЕК ФАЙЛОВ */
         } else if (msg.startsWith("/checkFiles%%")) {
             // убирается служебная команда с принятного сообщения
             checkFiles = msg.replace("/checkFiles%%", "");
@@ -102,7 +93,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
             // сервер готов к получению файла
         } else if (msg.startsWith("/readyToGet%%")) {
 
-/** Тестовый отправки файла на сервер **/
+/* ОТПРАВКА ФАЙЛА НА СЕРВЕРА */
             // путь к файлу, который будет отправляться с сервера
             fileWorking = pathToDirectory + "working.docx";
             try (FileInputStream fileInputStream = new FileInputStream(fileWorking)) {
@@ -140,7 +131,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
             System.out.println("!!! channelRead !!!");
             // блок для записи файла
             if (isWriteFiles) {
-                file = new File(path);
+                file = new File(pathFile);
                 System.out.println(file.length() + " FILE");
                 bytes = msg.getBytes("ISO-8859-1");
                 System.out.println("SIZE BYTES == " + bytes.length);
