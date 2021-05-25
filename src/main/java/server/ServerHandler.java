@@ -9,6 +9,7 @@ import java.util.Arrays;
 public class ServerHandler extends SimpleChannelInboundHandler<String> {
     private String login, password, listFiles, result, pathFolderOfClient, nameFile, fileWorking;
     private String[] arrayFiles;
+    private StringBuilder resultAboutFiles = new StringBuilder();
     private File folderServer;
     private long sizeFileServer = 0;
     private boolean isWriteFiles = false;
@@ -42,9 +43,6 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
                 // путь к папке клиента на сервере
                 pathFolderOfClient = directoryClient + login + "\\";
                 folderServer = new File(pathFolderOfClient);
-//                String s = "true " + login;
-//                byte[] bytes = s.getBytes("US-ASCII");
-//                System.out.println(Arrays.toString(bytes));
                 channelHandlerContext.writeAndFlush("true " + login);
             } else channelHandlerContext.writeAndFlush("неверный логин или пароль");
         }
@@ -57,13 +55,14 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
 
 /* ПОЛУЧЕНИЯ ФАЙЛА */
         // получает команду для готовности получения файла на сервер и отправляет ответ о готовности
-        if (msg.startsWith("/loadToServer ")) channelHandlerContext.writeAndFlush("/readyToGet%%\n");
+        if (msg.startsWith("/loadToServer ")) {
+            channelHandlerContext.writeAndFlush("/readyToGet%%" + checkFile(msg) + "\n");
+        }
         // блок для записи файла
         if (isWriteFiles) {
             file = new File(fileWorking);
             System.out.println(file.length() + " FILE");
             bytes = msg.getBytes("ISO-8859-1");
-            System.out.println("SIZE BYTES == " + bytes.length + " [page 146]");
             outputStream.write(bytes);
             setSizeFile(file.length());
             // когда размер файла с сервера равен скаченному файлу на клиенте, закрывается работа с файлом записи
@@ -71,7 +70,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
                 outputStream.flush();
                 outputStream.close();
                 isWriteFiles = false;
-                channelHandlerContext.writeAndFlush("/nameFile%%" + file.getName() + " == Загружен на сервер");
+                resultAboutFiles.append(file.getName() + " == Загружен на сервер\n");
                 System.out.println("CHECK");
             } else {
                 System.out.println("NO CHECK");
@@ -79,13 +78,21 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             System.out.println("client: " + sizeFile + "\nServer: " + sizeFileServer);
         }
 
+        // если файла нет на клиенте, но есть на сервере - этот файл удаляется с сервера
+        if (msg.startsWith("/deleteFile%%")) {
+            String nameFile = msg.replace("/deleteFile%%", "");
+            File file = new File(pathFolderOfClient + nameFile);
+            file.delete();
+            resultAboutFiles.append(nameFile + " == удален с сервера");
+        }
+
         // возвращается команда получения файла
+        // получаем данные о файле (имя и размер)
         if (msg.startsWith("/sendFile%%")) {
             // флаг, для вхождения в блок операции скачивания файла
             isWriteFiles = true;
             // второй элемент массива - размер файла на сервере
             String[] str = msg.split("%%");
-            System.out.println("[" + str[1] + "]");
             this.setSizeFileServer(Long.parseLong(str[1]));
             // получает имя файла, которое будет сохранено на клиенте
             nameFile = str[2];
@@ -93,6 +100,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             fileWorking = addNameFile.toString();
             System.out.println(fileWorking + " ===== FILE");
             outputStream = new FileOutputStream(fileWorking, true);
+            if (this.sizeFileServer == 0) {
+                outputStream.flush();
+                outputStream.close();
+                isWriteFiles = false;
+                resultAboutFiles.append(nameFile.replace("/nameFile%%", "") + " == Загружен на сервер\n");
+            }
 
             System.out.println("client: " + sizeFile + "\nServer: " + sizeFileServer);
         }
@@ -100,7 +113,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
 
 
 
-/* ОТПРАВКА ФАЙЛА НА КЛИЕНТ */
+/* ОТПРАВКА ФАЙЛОВ НА КЛИЕНТ */
         if (msg.startsWith("/loadFromServer ")) {
             // путь к файлу, который будет отправляться с сервера
             String files = checkFile(msg);
@@ -109,16 +122,25 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             System.out.println("====================");
             for (String x : listFiles) {
                 System.out.println("[" + x + "]");
+                // если файл находиться на сервере (результат файла "на сервере"), тогда происходит отправка файла
                 if (x.endsWith("на сервере")) {
+                    // из имени файла убираются слеш и результат "на сервере", который заменяется на статус "скачен"
                     x = x.replace("\\", "");
                     x = x.replace(" == на сервере", "");
                     nameListFiles.append(x + " == скачен\n");
                     x = pathFolderOfClient + x;
+                    // метод отправки файла
                     sendFiles(x, channelHandlerContext);
                 }
             }
+            // отправляет результат о скачиваемом файле
             channelHandlerContext.writeAndFlush("/nameFile%%" + nameListFiles.toString());
             System.out.println("====================");
+        }
+        // когда все файлы были проверены (скачены и удалены), отправляется результат
+        if (msg.startsWith("/endFiles ")) {
+            channelHandlerContext.writeAndFlush("/nameFile%%" + resultAboutFiles.toString() + "\n");
+            resultAboutFiles.setLength(0);
         }
     }
 
@@ -127,7 +149,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
         result = " == на клиенте\n";
         // убираем команду с входящего запроса
         if (msg.startsWith("/check ")) listFiles = msg.replace("/check ", "");
-        else if (msg.startsWith("/loadFromServer ")) listFiles = msg.replace("/loadFromServer ", "");
+        if (msg.startsWith("/loadFromServer ")) listFiles = msg.replace("/loadFromServer ", "");
+        if (msg.startsWith("/loadToServer ")) listFiles = msg.replace("/loadToServer ", "");
 
         // получение массива с разделением строк по спец. символу
         arrayFiles = listFiles.split("%%");
@@ -186,7 +209,6 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
                 if (sizeFileControl <= 0) break;
                 Arrays.fill(bytes, (byte) 0);
             }
-//            channelHandlerContext.writeAndFlush("/nameFile%%" + file.getName() + " == скачен");
         }
     }
 

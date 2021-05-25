@@ -17,9 +17,8 @@ public class ClientGui extends Application {
     private Client client = new Client("localhost", 2000);
     private ChannelFuture future;
     private ClientHandler clientHandler;
-    private String message;
+    private String message, pathToDirectory, command;
     private File directory;
-    private String pathToDirectory;
     private StringBuilder listFiles;
 
     public static void main(String[] args) {
@@ -87,20 +86,20 @@ public class ClientGui extends Application {
 
 /* ЧЕК ФАЙЛОВ */
         synchronizationController.getButtonCheck().setOnMouseClicked(check -> {
-            checkFiles(synchronizationController);
+            command = "check";
+            checkFiles(synchronizationController, command);
         });
 
-        /* ПОКА ТЕСТ ДЛЯ ПРИЕМА ФАЙЛА С СЕРВЕРА */
+        /* ПОКА ТЕСТ ДЛЯ ОТПРАВКИ ПАКЕТА ФАЙЛОВ НА СЕРВЕР */
         /** загрузка файлов на сервер (файлы, которых нет на сервере, удаляются) **/
         synchronizationController.getButtonLoadToServer().setOnMouseClicked(loadToServer -> {
+            command = "loadToServer";
             pathToDirectory = synchronizationController.getPath();
             // устанавливает путь к файлу (получает со строки ввода)
             clientHandler.setPathFolder(pathToDirectory);
             try {
                 // проверка статусов файлов
-                checkFiles(synchronizationController);
-                future.channel().writeAndFlush("/loadToServer " + "\n");
-//                readMessageSynchronization(synchronizationController);
+                checkFiles(synchronizationController, command);
                 // (ВЫВОД РЕЗУЛЬТАТА В ОКНО) ожидание получения имени скаченного файла
                 while (!clientHandler.isReadNameFile()) {
                     // если имя файла получено, тогда выводиться имя файла на экран
@@ -130,7 +129,6 @@ public class ClientGui extends Application {
                     listFiles.append("\\" + x + "%%");
                 }
                 future.channel().writeAndFlush("/loadFromServer " + listFiles + "\n");
-//                readMessageSynchronization(synchronizationController);
                 // (ВЫВОД РЕЗУЛЬТАТА В ОКНО) ожидание получения имени скаченного файла
                 while (!clientHandler.isReadNameFile()) {
                     // если имя файла получено, тогда выводиться имя файла на экран
@@ -163,7 +161,7 @@ public class ClientGui extends Application {
     }
 
     // метод для проверки файлов
-    private void checkFiles(ClientControllerSynchronization synchronizationController) {
+    private void checkFiles(ClientControllerSynchronization synchronizationController, String command) {
         pathToDirectory = synchronizationController.getPath();
         clientHandler.setPathFolder(pathToDirectory);
         try {
@@ -172,20 +170,18 @@ public class ClientGui extends Application {
             for (String x : directory.list()) {
                 listFiles.append("\\" + x + "%%");
             }
-            future.channel().writeAndFlush("/check " + listFiles);
+            if (command.equals("check")) future.channel().writeAndFlush("/check " + listFiles);
+            else if (command.equals("loadToServer")) future.channel().writeAndFlush("/loadToServer " + listFiles);
             // цикл для ожидания получения всего сообщения с сервера
-            while (!clientHandler.isCheck()) {
-                // если будет долгое чтение сообщения
-                synchronizationController.setMessage("загрузка...");
-                // если все сообщение было прочитано, устанавливается значение false и прекращается цикл
-                if (clientHandler.isCheck()) {
-                    clientHandler.setCheck(false);
-                    break;
-                }
-            }
+//            while (!clientHandler.isCheck()) {
+//                // если все сообщение было прочитано, устанавливается значение false и прекращается цикл
+//                if (clientHandler.isCheck()) {
+//                    clientHandler.setCheck(false);
+//                    break;
+//                }
+//            }
             // для отображения в GUI полученного результата по файлам
             synchronizationController.setMessage(clientHandler.getCheckFiles());
-//                readMessageSynchronization(synchronizationController);
         } catch (NullPointerException e) {
             synchronizationController.setMessage("Неверно указан путь к папке!");
         }

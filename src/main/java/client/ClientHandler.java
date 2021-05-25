@@ -11,7 +11,6 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
     private byte[] bytes;
     private long sizeFile;
     private boolean isWriteFiles = false;
-    private boolean isSendFiles = false;
     private boolean isCheck = false;
     private boolean isReadNameFile = false;
     private long sizeFileServer = 0;
@@ -68,7 +67,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
         /** для скачанивания файла с сервера **/
         // если принятое сообщение начинается со служебной команды "/downloadFile ", это означает, что сервер передает
         // размер и имя файла, который необходимо принять
-/* ПОЛУЧЕНИЕ ФАЙЛА С СЕРВЕРА */
+        /* ПОЛУЧЕНИЕ ФАЙЛА С СЕРВЕРА */
         if (msg.startsWith("/downloadFile%%")) {
             // флаг, для вхождения в блок операции скачивания файла
             isWriteFiles = true;
@@ -83,49 +82,39 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
             outputStream = new FileOutputStream(pathFile, true);
             System.out.println("client: " + sizeFile + "\nServer: " + sizeFileServer);
 
-/* ЧЕК ФАЙЛОВ */
+            /* ЧЕК ФАЙЛОВ */
+        } else if // чтение имени файла
+        (msg.startsWith("/nameFile%%")) {
+            message = msg.replace("/nameFile%%", "");
+            isReadNameFile = true;
+            isCheck = true;
         } else if (msg.startsWith("/checkFiles%%")) {
             // убирается служебная команда с принятного сообщения
             checkFiles = msg.replace("/checkFiles%%", "");
             // после прочтения, устанавливается значение true (сообщение прочитано)
             isCheck = true;
+
             /** для отправки файла на сервер **/
             // сервер готов к получению файла
         } else if (msg.startsWith("/readyToGet%%")) {
 
-/* ОТПРАВКА ФАЙЛА НА СЕРВЕРА */
-            // путь к файлу, который будет отправляться с сервера
-            fileWorking = pathToDirectory + "working.docx";
-            try (FileInputStream fileInputStream = new FileInputStream(fileWorking)) {
-                // File служит для получения размера файла
-                file = new File(fileWorking);
-                sizeFile = file.length();
-                long sizeFileControl = file.length();
-                long sizeFrameByte = 8192;
-                int count = 0;
-                String stringOut = "";
-                byte[] bytes = new byte[(int) sizeFrameByte];
-                channelHandlerContext.writeAndFlush("/sendFile%%" + sizeFile + "%%" + file.getName());
-                while (fileInputStream.read(bytes) > 0) {
-                    System.out.println("SEND FILE TO SERVER");
-                    System.out.println("\nFILE NAME = " + file.getName());
-                    System.out.println("sizeFile " + sizeFile);
-                    System.out.println("sizeFileControl " + sizeFileControl);
-                    count++;
-                    System.out.println("== FRAME == " + count + " " + bytes.length);
-                    stringOut = new String(bytes, "ISO-8859-1");
-                    System.out.println("SIZE BYTES == " + bytes.length);
-                    channelHandlerContext.writeAndFlush(stringOut);
-                    sizeFileControl -= sizeFrameByte;
-                    if (sizeFileControl <= sizeFrameByte && sizeFileControl > 0) {
-                        bytes = new byte[(int) sizeFileControl];
-                    }
-                    if (sizeFileControl <= 0) break;
-                    Arrays.fill(bytes, (byte) 0);
+            /* ОТПРАВКА ФАЙЛА НА СЕРВЕРА */
+            checkFiles = msg.replace("/readyToGet%%", "");
+            String[] files = checkFiles.split("\n");
+            for (String x : files) {
+                if (x.endsWith(" == на клиенте")) {
+                    x = x.replace("\\", "");
+                    x = x.replace(" == на клиенте", "");
+                    sendFiles(x, channelHandlerContext);
+                } else if (x.endsWith(" == на сервере")) {
+                    x = x.replace("\\", "");
+                    x = x.replace(" == на сервере", "");
+                    channelHandlerContext.writeAndFlush("/deleteFile%%" + x);
                 }
             }
-
-        } else {
+            channelHandlerContext.writeAndFlush("/endFiles ");
+        }
+        else {
             // в ином случае считывается принятое сообщение
             this.message = msg;
             System.out.println("!!! channelRead !!!");
@@ -148,13 +137,42 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
                 }
                 System.out.println("client: " + sizeFile + "\nServer: " + sizeFileServer);
             }
-            // чтение имени файла
         }
-        if (msg.startsWith("/nameFile%%")) {
-            System.out.println("NAME FILE ==== ");
-            message = msg.replace("/nameFile%%", "");
-            System.out.println("MESSAGE: " + message);
-            isReadNameFile = true;
+    }
+
+    private void sendFiles(String fileWorking, ChannelHandlerContext channelHandlerContext) throws IOException {
+        this.fileWorking = pathToDirectory + fileWorking;
+        try (FileInputStream fileInputStream = new FileInputStream(this.fileWorking)) {
+            // File служит для получения размера файла
+            file = new File(this.fileWorking);
+            sizeFile = file.length();
+            long sizeFileControl = file.length();
+            long sizeFrameByte = 8192;
+            int count = 0;
+            String stringOut = "";
+            byte[] bytes = new byte[(int) sizeFrameByte];
+            channelHandlerContext.writeAndFlush("/sendFile%%" + sizeFile + "%%" + file.getName());
+            // если файл меньше фрейма, тогда устанавливается новый размер массива байтов
+            if (sizeFileControl <= sizeFrameByte) {
+                bytes = new byte[(int) sizeFileControl];
+            }
+            while (fileInputStream.read(bytes) > 0) {
+                System.out.println("SEND FILE TO SERVER");
+                System.out.println("\nFILE NAME = " + file.getName());
+                System.out.println("sizeFile " + sizeFile);
+                System.out.println("sizeFileControl " + sizeFileControl);
+                count++;
+                System.out.println("== FRAME == " + count + " " + bytes.length);
+                stringOut = new String(bytes, "ISO-8859-1");
+                System.out.println("SIZE BYTES == " + bytes.length);
+                channelHandlerContext.writeAndFlush(stringOut);
+                sizeFileControl -= sizeFrameByte;
+                if (sizeFileControl <= sizeFrameByte && sizeFileControl > 0) {
+                    bytes = new byte[(int) sizeFileControl];
+                }
+                if (sizeFileControl <= 0) break;
+                Arrays.fill(bytes, (byte) 0);
+            }
         }
     }
 
