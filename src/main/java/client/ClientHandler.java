@@ -15,8 +15,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
     private boolean isReadNameFile = false;
     private long sizeFileServer = 0;
     private OutputStream outputStream;
-
-    private String pathToDirectory = "H:\\JavaGeekBrains\\GB_Project_Java_1\\папка для синхронизации\\";
+    private String pathToDirectory;
 
     // файл служит для котроля размера файла
     private File file;
@@ -63,7 +62,6 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, String msg) throws Exception {
-        System.out.println(msg + " === сообщение входа [77]");
         /** для скачанивания файла с сервера **/
         // если принятое сообщение начинается со служебной команды "/downloadFile ", это означает, что сервер передает
         // размер и имя файла, который необходимо принять

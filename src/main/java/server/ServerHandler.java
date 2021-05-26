@@ -17,9 +17,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     private OutputStream outputStream;
     private File file;
     private byte[] bytes;
-
+    private ServerEcho serverEcho = ServerEcho.getInstance();
     // путь к хранилищу сервера
-    private String directoryClient = "H:\\JavaGeekBrains\\GB_Project_Java_1\\folderServer\\";
+    private String directoryClient = serverEcho.getPathToFolder() + "\\";
+
+//    private String directoryClient = "H:\\JavaGeekBrains\\GB_Project_Java_1\\folderServer\\";
+    // H:\JavaGeekBrains\GB_Project_Java_1\folderServer
 
     public void setSizeFileServer(long sizeFileServer) {
         this.sizeFileServer = sizeFileServer;
@@ -40,6 +43,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             System.out.printf("логин: %s пароль: %s\n", login, password);
             // проверка совпадения логина и пароля с отправкой квитанции клиенту
             if (login.equals("graf") && password.equals("123")) {
+                serverEcho.setMessage("Клиент: " + login + " авторизировался");
                 // путь к папке клиента на сервере
                 pathFolderOfClient = directoryClient + login + "\\";
                 folderServer = new File(pathFolderOfClient);
@@ -193,6 +197,10 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             String stringOut = "";
             byte[] bytes = new byte[(int) sizeFrameByte];
             channelHandlerContext.writeAndFlush("/downloadFile%%" + sizeFile + "%%" + file.getName());
+            // если файл меньше фрейма, тогда устанавливается новый размер массива байтов
+            if (sizeFileControl <= sizeFrameByte) {
+                bytes = new byte[(int) sizeFileControl];
+            }
             while (fileInputStream.read(bytes) > 0) {
                 System.out.println("\nFILE NAME = " + file.getName());
                 System.out.println("sizeFile " + sizeFile);

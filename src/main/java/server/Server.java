@@ -14,12 +14,22 @@ import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import server.gui.ServerController;
 
 public class Server {
     private final int port;
+    private ChannelFuture channelFuture;
+    private NioEventLoopGroup loginGroup;
+    private NioEventLoopGroup eventsGroup;
+
+    private ServerEcho serverEcho = ServerEcho.getInstance();
 
     public static void main(String[] args) throws InterruptedException {
-        new Server(2000).start();
+//        new Server(2000).start();
+    }
+
+    public ServerEcho getServerEcho() {
+        return serverEcho;
     }
 
     public Server(int port) {
@@ -28,9 +38,9 @@ public class Server {
 
     public void start() throws InterruptedException {
         // авторизация
-        NioEventLoopGroup loginGroup = new NioEventLoopGroup(1);
+        loginGroup = new NioEventLoopGroup(1);
         // работа с подключенным клиентом
-        NioEventLoopGroup eventsGroup = new NioEventLoopGroup();
+        eventsGroup = new NioEventLoopGroup();
 
         try {
             // создание сервера
@@ -58,7 +68,7 @@ public class Server {
             server.childOption(ChannelOption.SO_KEEPALIVE, true);
 
             // запуск сервера на указанном порту (привязка port к серверу) и ожидание его запуска (.sync)
-            ChannelFuture channelFuture = server.bind(port).sync();
+            channelFuture = server.bind(port).sync();
             System.out.println("Server get up");
             // получение задачи на закрытие сервера и ожидание её выполнения (.sync)
             channelFuture.channel().closeFuture().sync();
@@ -68,5 +78,11 @@ public class Server {
             loginGroup.shutdownGracefully();
             eventsGroup.shutdownGracefully();
         }
+    }
+
+    public void closeServer() {
+        channelFuture.channel().closeFuture();
+        loginGroup.shutdownGracefully();
+        eventsGroup.shutdownGracefully();
     }
 }

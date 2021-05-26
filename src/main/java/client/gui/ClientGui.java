@@ -90,7 +90,7 @@ public class ClientGui extends Application {
             checkFiles(synchronizationController, command);
         });
 
-        /* ПОКА ТЕСТ ДЛЯ ОТПРАВКИ ПАКЕТА ФАЙЛОВ НА СЕРВЕР */
+        /* ДЛЯ ОТПРАВКИ ПАКЕТА ФАЙЛОВ НА СЕРВЕР */
         /** загрузка файлов на сервер (файлы, которых нет на сервере, удаляются) **/
         synchronizationController.getButtonLoadToServer().setOnMouseClicked(loadToServer -> {
             command = "loadToServer";
