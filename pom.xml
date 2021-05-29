@@ -82,7 +82,7 @@
                             <goal>repackage</goal>
                         </goals>
                         <configuration>
-                            <classifier>spring-boot</classifier>
+                            <classifier>Client</classifier>
                             <mainClass>
                                 client.gui.ClientGui
                             </mainClass>

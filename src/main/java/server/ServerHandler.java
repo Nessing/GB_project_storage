@@ -4,6 +4,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 public class ServerHandler extends SimpleChannelInboundHandler<String> {
@@ -46,6 +49,13 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
                 serverEcho.setMessage("Клиент: " + login + " авторизировался");
                 // путь к папке клиента на сервере
                 pathFolderOfClient = directoryClient + login + "\\";
+                // проверка наличия директории клиента на сервере
+                File file = new File(pathFolderOfClient);
+                // если директории нет, то она создается
+                if (!file.exists()) {
+                    Path path = Paths.get(pathFolderOfClient);
+                    Files.createDirectories(path);
+                }
                 folderServer = new File(pathFolderOfClient);
                 channelHandlerContext.writeAndFlush("true " + login);
             } else channelHandlerContext.writeAndFlush("неверный логин или пароль");

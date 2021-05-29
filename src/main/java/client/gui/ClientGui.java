@@ -95,6 +95,7 @@ public class ClientGui extends Application {
         synchronizationController.getButtonLoadToServer().setOnMouseClicked(loadToServer -> {
             command = "loadToServer";
             pathToDirectory = synchronizationController.getPath();
+            synchronizationController.setMessage("Происходит отправка файлов на сервер...");
             // устанавливает путь к файлу (получает со строки ввода)
             clientHandler.setPathFolder(pathToDirectory);
             try {
@@ -122,6 +123,7 @@ public class ClientGui extends Application {
         /** загрузка файлов с сервера **/
         synchronizationController.getButtonLoadFromServer().setOnMouseClicked(loadFromServer -> {
             pathToDirectory = synchronizationController.getPath();
+            synchronizationController.setMessage("Происходит загрузка файлов с сервера...");
             try {
                 directory = new File(pathToDirectory);
                 listFiles = new StringBuilder();

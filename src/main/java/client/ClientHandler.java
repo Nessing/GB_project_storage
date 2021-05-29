@@ -15,7 +15,6 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
     private boolean isReadNameFile = false;
     private long sizeFileServer = 0;
     private OutputStream outputStream;
-    private String pathToDirectory;
 
     // файл служит для котроля размера файла
     private File file;
@@ -71,7 +70,6 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
             pathFile = addNameFile.toString();
             outputStream = new FileOutputStream(pathFile, true);
             System.out.println("client: " + sizeFile + "\nServer: " + sizeFileServer);
-
             /* ЧЕК ФАЙЛОВ */
         } else if // чтение имени файла
         (msg.startsWith("/nameFile%%")) {
@@ -130,7 +128,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
     }
 
     private void sendFiles(String fileWorking, ChannelHandlerContext channelHandlerContext) throws IOException {
-        this.fileWorking = pathToDirectory + fileWorking;
+        this.fileWorking = pathFolder + "\\" + fileWorking;
         try (FileInputStream fileInputStream = new FileInputStream(this.fileWorking)) {
             // File служит для получения размера файла
             file = new File(this.fileWorking);
