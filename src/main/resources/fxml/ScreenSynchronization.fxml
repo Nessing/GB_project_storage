@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="449.0" prefWidth="741.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.gui.ClientControllerSynchronization">
+   <children>
+      <Label fx:id="labelUserName" alignment="CENTER" layoutX="280.0" layoutY="14.0" prefHeight="19.0" prefWidth="182.0" text="User Name" textAlignment="CENTER">
+         <font>
+            <Font size="13.0" />
+         </font></Label>
+      <Label layoutX="16.0" layoutY="15.0" prefHeight="17.0" prefWidth="78.0" text="List files:">
+         <font>
+            <Font size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="path" layoutX="127.0" layoutY="353.0" prefHeight="29.0" prefWidth="494.0">
+         <font>
+            <Font size="13.0" />
+         </font></TextField>
+      <Label layoutX="16.0" layoutY="358.0" prefHeight="19.0" prefWidth="106.0" text="Path to directory:">
+         <font>
+            <Font size="13.0" />
+         </font></Label>
+      <Button fx:id="buttonBack" layoutX="16.0" layoutY="399.0" mnemonicParsing="false" onAction="#back" prefHeight="32.0" prefWidth="106.0" text="Back">
+         <font>
+            <Font size="13.0" />
+         </font></Button>
+      <Button fx:id="buttonLoadFromServer" layoutX="448.0" layoutY="403.0" mnemonicParsing="false" onAction="#synchronization" prefHeight="32.0" prefWidth="130.0" text="Load from server">
+         <font>
+            <Font size="13.0" />
+         </font></Button>
+      <Button fx:id="buttonLoadToServer" layoutX="596.0" layoutY="403.0" mnemonicParsing="false" prefHeight="32.0" prefWidth="130.0" text="Load to server">
+         <font>
+            <Font size="13.0" />
+         </font>
+      </Button>
+      <Button fx:id="buttonCheck" layoutX="633.0" layoutY="353.0" mnemonicParsing="false" prefHeight="19.0" prefWidth="89.0" text="Check files">
+         <font>
+            <Font size="13.0" />
+         </font>
+      </Button>
+      <TextArea fx:id="message" layoutX="14.0" layoutY="35.0" prefHeight="305.0" prefWidth="712.0">
+         <font>
+            <Font size="13.0" />
+         </font></TextArea>
+   </children>
+</AnchorPane>
