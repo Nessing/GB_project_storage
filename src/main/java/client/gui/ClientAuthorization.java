@@ -2,7 +2,6 @@ package client.gui;
 
 import client.Client;
 import client.ClientHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelFuture;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -13,10 +12,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.*;
-import java.lang.reflect.Array;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,7 +71,7 @@ public class ClientAuthorization extends Application {
                         // при закрытии окна, завершается приложение
                         clientGui.setOnCloseRequest(windowEvent -> {
                             // закрывается соединение после закрытия окна "синхронизация"
-                            client.closeClient();
+                            client.closeConnect();
                             Platform.exit();
                         });
                         // открывается новое окно
@@ -93,7 +88,7 @@ public class ClientAuthorization extends Application {
 
         stage.setOnCloseRequest(windowEvent -> {
             // закрывается соединение после закрытия окна
-            client.closeClient();
+            client.closeConnect();
         });
 
         /** проверка файлов **/

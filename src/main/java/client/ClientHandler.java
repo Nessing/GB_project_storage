@@ -28,14 +28,6 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
         isReadNameFile = readNameFile;
     }
 
-    public boolean isCheck() {
-        return isCheck;
-    }
-
-    public void setCheck(boolean check) {
-        isCheck = check;
-    }
-
     public String getCheckFiles() {
         return checkFiles;
     }
@@ -115,7 +107,6 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
         else {
             // в ином случае считывается принятое сообщение
             this.message = msg;
-            System.out.println("!!! channelRead !!!");
             // блок для записи файла
             if (isWriteFiles) {
                 file = new File(pathFile);
@@ -172,12 +163,5 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
                 Arrays.fill(bytes, (byte) 0);
             }
         }
-    }
-
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("!! ПРОЧИТАНО !!");
-        System.out.println("End");
-        super.channelReadComplete(ctx);
     }
 }

@@ -22,6 +22,10 @@ public class ClientControllerAuthorization {
         return buttonAuthorization;
     }
 
+    public Button getButtonRegistration() {
+        return buttonRegistration;
+    }
+
     public boolean isActivated() {
         return isActivated;
     }

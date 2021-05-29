@@ -64,10 +64,10 @@ public class ClientGui extends Application {
                         // при закрытии окна, завершается приложение
                         clientGui.setOnCloseRequest(windowEvent -> {
                             // закрывается соединение после закрытия окна "синхронизация"
-                            client.closeClient();
+                            client.closeConnect();
                             Platform.exit();
                         });
-                        // открывается новое окно
+                        // при нажатии "Back", закрывается окно синхронизации. Доступно окно авторизации
                         synchronizationController.getButtonBack().setOnMouseClicked(back -> {
                             clientGui.hide();
                         });
@@ -81,10 +81,10 @@ public class ClientGui extends Application {
 
         stage.setOnCloseRequest(windowEvent -> {
             // закрывается соединение после закрытия окна
-            client.closeClient();
+            client.closeConnect();
         });
 
-/* ЧЕК ФАЙЛОВ */
+        /* ЧЕК ФАЙЛОВ */
         synchronizationController.getButtonCheck().setOnMouseClicked(check -> {
             command = "check";
             checkFiles(synchronizationController, command);
@@ -154,7 +154,19 @@ public class ClientGui extends Application {
             try {
                 // стартую клиента с фреймворком netty
                 client.start();
-            } catch (InterruptedException e) {
+                // если соединение разорвалось
+                synchronizationController.setMessage("Соединение разорвано\nперезапустите приложение");
+                synchronizationController.getButtonCheck().setDisable(true);
+                synchronizationController.getButtonLoadFromServer().setDisable(true);
+                synchronizationController.getButtonLoadToServer().setDisable(true);
+                synchronizationController.getButtonBack().setDisable(true);
+                // если клиент не установил соединение с сервером
+            } catch (InterruptedException | NullPointerException e) {
+                authorizationController.setTextArea("Нет соединения с сервером!\nперезапустите приложение");
+                // выключает активность у кнопок авторизации и регистрации
+                authorizationController.getButtonAuthorization().setDisable(true);
+                authorizationController.getButtonRegistration().setDisable(true);
+                client.closeConnect();
                 e.printStackTrace();
             }
         }).start();

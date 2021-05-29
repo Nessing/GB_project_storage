@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 import server.Server;
 import server.ServerEcho;
 
+import java.io.File;
 import java.io.InputStream;
 
 public class ServerGui extends Application {
@@ -34,7 +35,9 @@ public class ServerGui extends Application {
         serverController.getButtonStop().setDisable(true);
         // при нажатии на кнопку "Start" запускается сервер и береться путь к папке сервера
         serverController.getButtonStart().setOnMouseClicked(buttonStartServer -> {
-            if (serverController.getPathToFolderString().equals("")) serverController.setTextArea("Неверно указан путь");
+            File file = new File(serverController.getPathToFolderString());
+            if (serverController.getPathToFolderString().equals("") || !file.isDirectory())
+                serverController.setTextArea("Неверно указан путь");
             else {
                 serverEcho.setPathToFolder(serverController.getPathToFolderString());
                 new Thread(() -> {
@@ -49,7 +52,6 @@ public class ServerGui extends Application {
                 serverController.getButtonStop().setDisable(false);
                 // неактивна строка ввода пути
                 serverController.getPathToFolder().setDisable(true);
-                serverController.getButtonStart().setText("Started");
                 serverController.setTextArea("Сервер запущен");
             }
         });

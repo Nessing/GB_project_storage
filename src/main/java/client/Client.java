@@ -18,6 +18,7 @@ import io.netty.handler.codec.string.StringEncoder;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.ConnectException;
 
 public class Client {
     private final int port;
@@ -25,6 +26,7 @@ public class Client {
     private ChannelFuture future;
     private ClientHandler clientHandler;
     private NioEventLoopGroup group;
+    private boolean isActive = true;
 
     public static void main(String[] args) throws InterruptedException {
 //        new Client("localhost", 2000).start();
@@ -66,16 +68,22 @@ public class Client {
             System.out.println("Client started");
 
             // подключение к серверу
-            future = client.connect(serverName, port).sync();
-
+            try {
+                future = client.connect(serverName, port).sync();
+            } catch (Exception e) {
+                isActive = false;
+            }
             future.channel().closeFuture().sync();
         } finally {
             group.shutdownGracefully();
         }
     }
 
-    public void closeClient() {
-        future.channel().closeFuture();
+    // метод закрытия соединения с сервером
+    public void closeConnect() {
+        if (isActive) {
+            future.channel().closeFuture();
+        }
         group.shutdownGracefully();
         System.out.println("client close");
     }
