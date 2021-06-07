@@ -7,6 +7,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.*;
 import java.util.Arrays;
 
 public class ServerHandler extends SimpleChannelInboundHandler<String> {
@@ -23,6 +24,10 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     private ServerEcho serverEcho = ServerEcho.getInstance();
     // путь к хранилищу сервера
     private String directoryClient = serverEcho.getPathToFolder() + "\\";
+
+    private Database database = Database.getInstance();
+    private Connection connection;
+    private Statement statement;
 
 //    private String directoryClient = "H:\\JavaGeekBrains\\GB_Project_Java_1\\folderServer\\";
     // H:\JavaGeekBrains\GB_Project_Java_1\folderServer
@@ -43,22 +48,85 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             String[] str = msg.split(" ");
             login = str[1];
             password = str[2];
+            boolean isExist = false;
             System.out.printf("логин: %s пароль: %s\n", login, password);
+            // провека логина и пароля на сервере (в БД)
+            statement = database.getStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
+            while (resultSet.next()) {
+                String loginDb = resultSet.getString("login");
+                String passwordDb = resultSet.getString("password");
+                // если аккаунт существует в БД, тогда происходит авторизация. Если не было папки на сервере
+                // то она создается
+                if (login.equals(loginDb) && password.equals(passwordDb)) {
+                    serverEcho.setMessage("Клиент: " + login + " авторизировался");
+                    // путь к папке клиента на сервере
+                    pathFolderOfClient = directoryClient + login + "\\";
+                    // проверка наличия директории клиента на сервере
+                    File file = new File(pathFolderOfClient);
+                    // если директории нет, то она создается
+                    if (!file.exists()) {
+                        Path path = Paths.get(pathFolderOfClient);
+                        Files.createDirectories(path);
+                    }
+                    folderServer = new File(pathFolderOfClient);
+                    channelHandlerContext.writeAndFlush("true " + login);
+                    isExist = true;
+                    break;
+                } else isExist = false;
+            }
+            // если логин или пароль введены не верно
+            if (!isExist) {
+                channelHandlerContext.writeAndFlush("неверный логин или пароль");
+            }
             // проверка совпадения логина и пароля с отправкой квитанции клиенту
-            if (login.equals("graf") && password.equals("123")) {
-                serverEcho.setMessage("Клиент: " + login + " авторизировался");
-                // путь к папке клиента на сервере
-                pathFolderOfClient = directoryClient + login + "\\";
-                // проверка наличия директории клиента на сервере
-                File file = new File(pathFolderOfClient);
-                // если директории нет, то она создается
-                if (!file.exists()) {
-                    Path path = Paths.get(pathFolderOfClient);
-                    Files.createDirectories(path);
+//            if (login.equals("graf") && password.equals("123")) {
+//                serverEcho.setMessage("Клиент: " + login + " авторизировался");
+//                // путь к папке клиента на сервере
+//                pathFolderOfClient = directoryClient + login + "\\";
+//                // проверка наличия директории клиента на сервере
+//                File file = new File(pathFolderOfClient);
+//                // если директории нет, то она создается
+//                if (!file.exists()) {
+//                    Path path = Paths.get(pathFolderOfClient);
+//                    Files.createDirectories(path);
+//                }
+//                folderServer = new File(pathFolderOfClient);
+//                channelHandlerContext.writeAndFlush("true " + login);
+//            } else channelHandlerContext.writeAndFlush("неверный логин или пароль");
+        }
+
+        // при регистрации нового пользователя
+        if (msg.startsWith("/registration")) {
+            String[] str = msg.split(" ");
+            login = str[1];
+            password = str[2];
+            boolean isExist = false;
+            System.out.printf("логин: %s пароль: %s\n", login, password);
+            // провека логина и пароля на сервере (в БД)
+            statement = database.getStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
+            while (resultSet.next()) {
+                String loginDb = resultSet.getString("login");
+                String passwordDb = resultSet.getString("password");
+                // при создании нового аккаунта, если он существует, отправляется уведомление, что
+                // пользователь с таким логином уже существует
+                if (login.equals(loginDb)) {
+                    channelHandlerContext.writeAndFlush("пользователь с таким логином уже существует");
+                    isExist = true;
+                    break;
+                } else isExist = false;
+            }
+            // если пользователя не существует
+            if (!isExist) {
+                String req = "INSERT INTO users (login, password) VALUES (?, ?)";
+                try (PreparedStatement preparedStatement = database.getConnection().prepareStatement(req)) {
+                    preparedStatement.setString(1, login);
+                    preparedStatement.setString(2, password);
+                    preparedStatement.executeUpdate();
                 }
-                folderServer = new File(pathFolderOfClient);
-                channelHandlerContext.writeAndFlush("true " + login);
-            } else channelHandlerContext.writeAndFlush("неверный логин или пароль");
+                channelHandlerContext.writeAndFlush("аккаунт создан. Теперь можете войти под своим логином и паролем");
+            }
         }
 
         /** ОБРАБОТКА ЗАПРОСОВ ОТ КЛИЕНТА **/

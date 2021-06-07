@@ -9,18 +9,17 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-import io.netty.handler.codec.LineBasedFrameDecoder;
-import io.netty.handler.codec.bytes.ByteArrayDecoder;
-import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
-import server.gui.ServerController;
+
+import java.sql.*;
 
 public class Server {
     private final int port;
     private ChannelFuture channelFuture;
     private NioEventLoopGroup loginGroup;
     private NioEventLoopGroup eventsGroup;
+    private Database database = Database.getInstance();
 
     private ServerEcho serverEcho = ServerEcho.getInstance();
 
@@ -41,6 +40,14 @@ public class Server {
         loginGroup = new NioEventLoopGroup(1);
         // работа с подключенным клиентом
         eventsGroup = new NioEventLoopGroup();
+        try {
+            // создаем БД
+            database.createDB();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
 
         try {
             // создание сервера

@@ -79,6 +79,31 @@ public class ClientGui extends Application {
             }
         });
 
+        // регистрация нового пользователя
+        authorizationController.getButtonRegistration().setOnMouseClicked(registration -> {
+            if (future == null) {
+                future = client.getFuture();
+            }
+            if (clientHandler == null) {
+                clientHandler = client.getClientHandler();
+            }
+            // проверка правильности введенного логина и пароля
+            if (authorizationController.getLogin().contains(" ") || authorizationController.getPassword().contains(" ") ||
+                    authorizationController.getLogin().equals("") || authorizationController.getPassword().equals("")) {
+                authorizationController.setTextArea("Логин и пароль введены не коректно");
+            } else {
+                // отправка на сервер логин и пароль для регистрации
+                future.channel().writeAndFlush("/registration " + authorizationController.getLogin() +
+                        " " + authorizationController.getPassword());
+
+                // цикл на получение входящего сообщения от сервера (ответ)
+                // выполняется цикл, пока сообщение пустое (ожидание сообщения с сервера)
+                String message = readMessageAuthorization(authorizationController);
+                // если регистрация прошла успешно
+                    authorizationController.setTextArea(message);
+            }
+        });
+
         stage.setOnCloseRequest(windowEvent -> {
             // закрывается соединение после закрытия окна
             client.closeConnect();
